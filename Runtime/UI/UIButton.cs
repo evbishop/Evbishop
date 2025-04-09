@@ -6,26 +6,48 @@ using Sirenix.Serialization;
 using System.Linq;
 using TheraBytes.BetterUi;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.EventSystems;
 
 namespace Evbishop.Runtime.UI
 {
     [RequireComponent(typeof(BetterButton))]
-    public class UIButton : UIBehaviour, IPointerUpHandler
+    public class UIButton : UIBehaviour, IPointerDownHandler, IPointerUpHandler
     {
+        private const string MODULES = "Modules";
+
         [SerializeField, ReadOnly] private ESelectableState _currentState;
 
         [SerializeField] private bool _deselectAfterPress;
 
-        [OdinSerialize, FoldoutGroup(CALLBACKS)] public UIModulesSystem ModulesNormal { get; private set; } = new();
-        [OdinSerialize, FoldoutGroup(CALLBACKS)] public UIModulesSystem ModulesHighlighted { get; private set; } = new();
-        [OdinSerialize, FoldoutGroup(CALLBACKS)] public UIModulesSystem ModulesPressed { get; private set; } = new();
-        [OdinSerialize, FoldoutGroup(CALLBACKS)] public UIModulesSystem ModulesSelected { get; private set; } = new();
-        [OdinSerialize, FoldoutGroup(CALLBACKS)] public UIModulesSystem ModulesDisabled { get; private set; } = new();
+        [field: SerializeField, FoldoutGroup("Pointer")] public UnityEvent PointerDownActions { get; set; }
+        [field: SerializeField, FoldoutGroup("Pointer")] public UnityEvent PointerUpActions { get; set; }
+
+        [OdinSerialize, FoldoutGroup(MODULES)] public UIModulesSystem ModulesNormal { get; private set; } = new();
+        [OdinSerialize, FoldoutGroup(MODULES)] public UIModulesSystem ModulesHighlighted { get; private set; } = new();
+        [OdinSerialize, FoldoutGroup(MODULES)] public UIModulesSystem ModulesPressed { get; private set; } = new();
+        [OdinSerialize, FoldoutGroup(MODULES)] public UIModulesSystem ModulesSelected { get; private set; } = new();
+        [OdinSerialize, FoldoutGroup(MODULES)] public UIModulesSystem ModulesDisabled { get; private set; } = new();
 
         private BetterButton _button;
 
         public UIModulesSystem[] Modules { get; private set; } = new UIModulesSystem[5];
+
+        public bool IsInteractable
+        {
+            get
+            {
+                if (_button == null)
+                    _button = GetComponent<BetterButton>();
+                return _button.interactable;
+            }
+            set
+            {
+                if (_button == null)
+                    _button = GetComponent<BetterButton>();
+                _button.interactable = value;
+            }
+        }
 
         protected override void Awake()
         {
@@ -82,6 +104,42 @@ namespace Evbishop.Runtime.UI
                     case nameof(ESelectableState.Disabled):
                         e.AddListener(HandleStateDisabled);
                         break;
+                }
+            }
+        }
+
+        public void AddStateHandler(ESelectableState selectableState, UnityAction action)
+        {
+            var transition = _button.BetterTransitions.FirstOrDefault(t => t.Mode == Transitions.TransitionMode.CustomCallback);
+            if (transition == null)
+            {
+                transition = new Transitions(Transitions.SelectionStateNames);
+                transition.SetMode(Transitions.TransitionMode.CustomCallback);
+                _button.BetterTransitions.Add(transition);
+            }
+            foreach (var state in ((CustomTransitions)transition.TransitionStates)
+                .GetStates())
+            {
+                var e = state.StateObject;
+                if (state.Name == selectableState.ToString())
+                {
+                    e.AddListener(action);
+                }
+            }
+        }
+
+        public void RemoveStateHandler(ESelectableState selectableState, UnityAction action)
+        {
+            var transition = _button.BetterTransitions.FirstOrDefault(t => t.Mode == Transitions.TransitionMode.CustomCallback);
+            if (transition == null)
+                return;
+            foreach (var state in ((CustomTransitions)transition.TransitionStates)
+                .GetStates())
+            {
+                var e = state.StateObject;
+                if (state.Name == selectableState.ToString())
+                {
+                    e.RemoveListener(action);
                 }
             }
         }
@@ -147,8 +205,14 @@ namespace Evbishop.Runtime.UI
             HandleState(ModulesDisabled);
         }
 
+        public void OnPointerDown(PointerEventData eventData)
+        {
+            PointerDownActions?.Invoke();
+        }
+
         public void OnPointerUp(PointerEventData eventData)
         {
+            PointerUpActions?.Invoke();
             if (_deselectAfterPress && !eventData.hovered.Contains(gameObject))
             {
                 EventSystem.current.SetSelectedGameObject(null);

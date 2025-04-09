@@ -50,6 +50,10 @@ namespace Evbishop.Runtime.UI
             {
                 module.HandleAwake();
             }
+            foreach (var module in Modules.GetModulesWithInterface<IModuleAwakable<UIContainer>>())
+            {
+                module.HandleAwake(this);
+            }
         }
 
         protected override void Start()
@@ -91,10 +95,10 @@ namespace Evbishop.Runtime.UI
             if (_isClearingSelectedOnShow)
                 EventSystem.current.SetSelectedGameObject(null);
 
-            if (!instant && (Visibility == EVisibility.Showing || Visibility == EVisibility.Shown))
-            {
-                Hide(true);
-            }
+            //if (!instant && (Visibility == EVisibility.Showing || Visibility == EVisibility.Shown))
+            //{
+            //    Hide(true);
+            //}
 
             _workingAnimators = 0;
             Visibility = EVisibility.Showing;
@@ -137,7 +141,7 @@ namespace Evbishop.Runtime.UI
             //if (!instant && (Visibility == EVisibility.Hiding || Visibility == EVisibility.Hidden))
             //    return;
 
-            if (_isClearingSelectedOnHide)
+            if (_isClearingSelectedOnHide && EventSystem.current)
                 EventSystem.current.SetSelectedGameObject(null);
 
             _workingAnimators = 0;

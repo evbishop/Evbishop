@@ -8,7 +8,7 @@ namespace Evbishop.Editor.Texture_Batch_Editor
 {
     public partial class TextureBatchEditor : OdinEditorWindow
     {
-        private const string WINDOW = "Tools/Evbishop/Texture Batch Editor";
+        private const string WINDOW = "Tools/Texture Batch Editor";
         private const string COUNT_TEXTURES = "Count textures";
         private const string SET_CRUNCH_COMPRESSION = "Set crunch compression";
         private const string SET_MIP_STREAMING = "Set mip streaming";

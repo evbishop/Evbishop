@@ -5,11 +5,18 @@ using UnityEngine;
 
 namespace Evbishop.Runtime.UI.Modules.DOTween_Animation
 {
+    public enum EPlayMode : byte
+    {
+        Normal = 0,
+        PingPong = 1,
+    }
+
     public abstract class ModuleDOTween : AnimatorModule, IModuleDisposable
     {
         [SerializeField] protected float duration = 1;
         [SerializeField] protected Ease easePlay = Ease.OutQuad;
         [SerializeField] protected Ease easeReversePlay = Ease.InQuad;
+        [SerializeField, Sirenix.OdinInspector.EnumToggleButtons] protected EPlayMode playMode;
 
         protected Sequence sequence;
 
@@ -25,6 +32,10 @@ namespace Evbishop.Runtime.UI.Modules.DOTween_Animation
             sequence = DOTween
                 .Sequence()
                 .SetAutoKill(true);
+            if (playMode == EPlayMode.PingPong)
+            {
+                sequence.SetLoops(1, LoopType.Yoyo);
+            }
         }
 
         public override void Play()

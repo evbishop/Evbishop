@@ -18,7 +18,7 @@ namespace Evbishop.Editor
                 fontSize = 12,
                 alignment = TextAnchor.MiddleCenter,
                 imagePosition = ImagePosition.ImageAbove,
-                fontStyle = FontStyle.Bold
+                fontStyle = FontStyle.Normal
             };
         }
     }

@@ -9,5 +9,6 @@ namespace Evbishop.Runtime.SceneUtils
         BootstrapClientUI = 3,
         Menu = 4,
         MenuBackground = 5,
+        Test = 6,
     }
 }

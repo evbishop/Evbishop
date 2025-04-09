@@ -9,10 +9,10 @@ namespace Evbishop.Editor
     public static class ToolbarCallback
     {
         private static ScriptableObject currentToolbar;
-
         private static Type toolbarType = typeof(UnityEditor.Editor).Assembly.GetType("UnityEditor.Toolbar");
 
         public static Action OnToolbarGUILeft;
+        public static Action OnToolbarGUIMiddle;
         public static Action OnToolbarGUIRight;
 
         static ToolbarCallback()
@@ -26,7 +26,6 @@ namespace Evbishop.Editor
             if (currentToolbar == null)
             {
                 var toolbars = Resources.FindObjectsOfTypeAll(toolbarType);
-
                 currentToolbar = toolbars.Length > 0 ? (ScriptableObject)toolbars[0] : null;
 
                 if (currentToolbar != null)
@@ -35,30 +34,58 @@ namespace Evbishop.Editor
                     VisualElement visualElementRoot = root.GetValue(currentToolbar) as VisualElement;
 
                     RegisterCallback("ToolbarZoneLeftAlign", OnToolbarGUILeft);
+                    RegisterPlayModeCallback(visualElementRoot, OnToolbarGUIMiddle);
                     RegisterCallback("ToolbarZoneRightAlign", OnToolbarGUIRight);
+                }
+            }
+        }
 
-                    void RegisterCallback(string root, Action action)
+        private static void RegisterPlayModeCallback(VisualElement root, Action action)
+        {
+            if (action == null) return;
+
+            var toolbarZone = root.Q("ToolbarZonePlayMode");
+            if (toolbarZone == null) return;
+
+            var container = new IMGUIContainer();
+            container.style.flexGrow = 0;
+            container.style.flexShrink = 0;
+            container.style.marginLeft = 10;
+            container.onGUIHandler = () =>
+            {
+                var content = EditorGUIUtility.GetMainWindowPosition();
+                using (new GUILayout.HorizontalScope())
+                {
+                    action.Invoke();
+                }
+            };
+
+            toolbarZone.Add(container);
+        }
+
+        private static void RegisterCallback(string rootName, Action action)
+        {
+            if (action == null) return;
+
+            VisualElement toolbarZone = currentToolbar.GetType()
+                .GetField("m_Root", BindingFlags.NonPublic | BindingFlags.Instance)
+                .GetValue(currentToolbar) as VisualElement;
+
+            if (toolbarZone != null)
+            {
+                var zone = toolbarZone.Q(rootName);
+                if (zone != null)
+                {
+                    var container = new IMGUIContainer();
+                    container.style.flexGrow = 1;
+                    container.onGUIHandler = () =>
                     {
-                        VisualElement toolbarZone = visualElementRoot.Q(root);
-                        VisualElement parent = new VisualElement()
+                        using (new GUILayout.HorizontalScope())
                         {
-                            style =
-                            {
-                                flexGrow = 1,
-                                flexDirection = FlexDirection.Row,
-                            }
-                        };
-
-                        IMGUIContainer container = new IMGUIContainer();
-                        container.style.flexGrow = 1;
-                        container.onGUIHandler += () =>
-                        {
-                            action?.Invoke();
-                        };
-
-                        parent.Add(container);
-                        toolbarZone.Add(parent);
-                    }
+                            action.Invoke();
+                        }
+                    };
+                    zone.Add(container);
                 }
             }
         }
